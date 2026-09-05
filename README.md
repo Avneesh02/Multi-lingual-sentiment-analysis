@@ -1,63 +1,79 @@
-# Sentiment Analysis E-Consultation Module
+# Multilingual E-Consultation Emotion Analysis
 
-A multilingual emotion classification system for analyzing public comments submitted through government e-consultation portals. Built as a Final Year Project.
+A full-stack dashboard for analyzing public consultation comments across Indian languages. The application detects the input language, predicts the comment's dominant emotion, and presents confidence and probability details for review.
 
----
+## Features
 
-## What it does
-
-- Accepts a comment in **9 Indian languages + English**
-- Detects the **language automatically**
-- Classifies the **emotion**: `angry` · `neutral` · `happy` · `sad` · `fear`
-- Shows **confidence score** and probability breakdown
-- Supports **inline translation** between all 9 languages (no redirect)
-
-**Supported Languages:** Hindi · Marathi · Bengali · Tamil · Telugu · Kannada · Malayalam · Gujarati · English
-
----
+- Automatic language detection for Hindi, Marathi, Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, and English
+- Five-class emotion classification: `angry`, `happy`, `sad`, `fear`, and `neutral`
+- Confidence score and per-emotion probability breakdown
+- Bulk analysis for multiple comments, one comment per line
+- Session history and emotion-distribution charts in the dashboard
+- Inline translation through the backend proxy
+- Local inference using the trained model in `models/final`
 
 ## Tech Stack
 
-| Part | Technology |
-|---|---|
-| ML Model | `ai4bharat/indic-bert` (ALBERT, fine-tuned) |
-| Backend | FastAPI + Uvicorn |
-| Frontend | React 18 + Vite + Recharts |
-| Translation | Google Translate proxy (via backend) |
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite, Recharts |
+| Backend | FastAPI, Uvicorn, Pydantic |
+| Model | Fine-tuned `ai4bharat/indic-bert` with Transformers and PyTorch |
+| Language detection | Unicode script detection and `langdetect` |
+| Translation | Google Translate endpoint with MyMemory fallback |
 
----
+## Requirements
 
-## Project Structure
+- Python 3.10 or newer
+- Node.js 18 or newer and npm
+- Approximately 1.5 GB of available RAM for loading the model
+- The tracked model files in `models/final`
 
+## Installation
+
+Clone the repository and enter the project directory:
+
+```bash
+git clone https://github.com/Avneesh02/Multi-lingual-sentiment-analysis.git
+cd Multi-lingual-sentiment-analysis
 ```
-project/
-├── models/final/        ← Trained model weights (read-only)
-├── backend/             ← FastAPI server
-│   ├── main.py
-│   ├── emotion.py
-│   ├── predictor.py
-│   └── requirements.txt
-└── frontend/            ← React dashboard
-    └── src/
+
+### Backend
+
+Create and activate a virtual environment, then install the Python dependencies:
+
+```bash
+python -m venv .venv
 ```
 
----
+Windows PowerShell:
 
-## How to Run Locally
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
 
-### 1. Backend
+macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+```bash
+python -m pip install -r backend/requirements.txt
+```
+
+Start the API from the `backend` directory:
 
 ```bash
 cd backend
-pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
-Wait for: `Application startup complete.`
+The API is available at `http://localhost:8000`. Interactive API documentation is available at `http://localhost:8000/docs`.
 
-### 2. Frontend
+### Frontend
 
-Open a **second terminal**:
+Open a second terminal at the repository root:
 
 ```bash
 cd frontend
@@ -65,62 +81,127 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** in your browser.
+Open the Vite URL shown in the terminal, normally `http://localhost:5173`.
 
-> If port 5173 is taken, Vite will use 5174. Check the terminal output.
+The frontend uses `http://localhost:8000` by default. To point it at another backend, update `API_BASE_URL` in `frontend/src/config.js`.
 
----
+## API
 
-## API Endpoints
+### Health check
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/health` | Check if model is loaded |
-| `POST` | `/emotion/predict` | Classify emotion in text |
-| `GET` | `/translate` | Translate text (no API key needed) |
-
-### Example Request
-
-```bash
-curl -X POST http://localhost:8000/emotion/predict \
-  -H "Content-Type: application/json" \
-  -d '{"text": "रक्षाबंधन की शुभकामनाएँ"}'
+```http
+GET /health
 ```
 
-### Example Response
+Example response:
+
+```json
+{
+  "status": "ok",
+  "model_loaded": true
+}
+```
+
+### Predict emotion
+
+```http
+POST /emotion/predict
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{
+  "text": "The service has improved a lot."
+}
+```
+
+Response:
 
 ```json
 {
   "emotion": "happy",
   "confidence": 0.9809,
-  "language": { "code": "hi", "name": "Hindi" },
+  "language": {
+    "code": "en",
+    "name": "English"
+  },
   "probabilities": {
-    "angry": 0.0451, "neutral": 0.0185,
-    "happy": 0.9809, "sad": 0.0370, "fear": 0.0104
+    "angry": 0.0041,
+    "happy": 0.9809,
+    "sad": 0.0032,
+    "fear": 0.0028,
+    "neutral": 0.0089
   }
 }
 ```
 
----
+### Translate text
 
-## Model Info
+```http
+GET /translate?text=Hello&tl=hi
+```
 
-- **Architecture:** `AlbertForSequenceClassification`
-- **Base:** `ai4bharat/indic-bert`
-- **Classes:** 5 (angry, neutral, happy, sad, fear)
-- **Overall Accuracy:** 63.74%
-- **Best Language:** Hindi (78.4%), Tamil (76.4%)
+The backend detects the source language and returns the translated text. Translation depends on the external Google Translate or MyMemory service being reachable.
 
----
+## Project Structure
 
-## Requirements
+```text
+.
+├── backend/
+│   ├── main.py              FastAPI application and translation proxy
+│   ├── emotion.py           Emotion prediction endpoint and schemas
+│   ├── predictor.py         Model loading, language detection, inference
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx          Dashboard shell
+│   │   └── components/      Dashboard panels and charts
+│   ├── package.json
+│   └── vite.config.js
+├── models/
+│   └── final/               Trained model, tokenizer, and label encoder
+├── data/                    Source, standardized, and split datasets
+├── scripts/                 Data preparation and training scripts
+└── README.md
+```
 
-- Python 3.10+
-- Node.js 18+
-- ~1.5 GB RAM (for PyTorch model)
+## Model Details
 
----
+- Architecture: `AlbertForSequenceClassification`
+- Base model: `ai4bharat/indic-bert`
+- Classes: 5 emotions
+- Reported overall accuracy: 63.74%
+- Reported best language results: Hindi 78.4%, Tamil 76.4%
 
-## Note
+The model is loaded locally by the backend with `local_files_only=True`; no model download is required at startup when `models/final` is present.
 
-The `models/`, `data/`, and `scripts/` folders are **read-only** — they contain the trained weights and original dataset. Do not modify them.
+## Development Commands
+
+From `frontend/`:
+
+```bash
+npm run dev       # Start the development server
+npm run build     # Create a production build
+npm run preview   # Preview the production build
+```
+
+From the repository root, the backend can be started with:
+
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
+
+If that import form is not supported by the local environment, run Uvicorn from inside `backend/` as shown in the installation section.
+
+## Limitations
+
+- Predictions are model outputs and should be reviewed before being used for policy or operational decisions.
+- Language detection is script-based for most languages and may be uncertain for short or mixed-script text.
+- Translation uses public external endpoints and may be rate-limited or temporarily unavailable.
+- The included model is intended for this project and has not been presented as a production-safe or bias-free classifier.
+
+## License
+
+No license has been specified for this repository yet. Add a license before distributing or reusing the project publicly.
