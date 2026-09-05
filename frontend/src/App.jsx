@@ -6,6 +6,7 @@ import InputPanel from './components/InputPanel.jsx';
 import ResultCard from './components/ResultCard.jsx';
 import SessionHistory from './components/SessionHistory.jsx';
 import SessionSummaryChart from './components/SessionSummaryChart.jsx';
+import BulkAnalysis from './components/BulkAnalysis.jsx';
 
 export default function App() {
   // ── Connection state ──────────────────────────────────────
@@ -145,10 +146,13 @@ export default function App() {
         </div>
 
         {/* Bottom row: history + summary */}
-        <div className="bottom-row">
-          <SessionHistory history={history} />
-          <SessionSummaryChart history={history} />
-        </div>
+          <div className="bottom-row">
+            <SessionHistory history={history} />
+            <SessionSummaryChart history={history} />
+          </div>
+
+          {/* Bulk analysis section */}
+          <BulkAnalysis connected={connected} />
       </main>
 
       {/* ── Footer ────────────────────────────────────────── */}
