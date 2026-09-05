@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Model checkpoints and large binary artifacts
+models/checkpoints/
+models/final/*.safetensors
+models/final/tokenizer.json
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
